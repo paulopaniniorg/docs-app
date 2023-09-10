@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: docs-app
+  labels:
+    app: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: docs-app
+  template:
+    metadata:
+      labels:
+        app: docs-app
+    spec:
+      containers:
+      - name:  docs-app
+        image: ghcr.io/paulopaniniorg/docs-app:latest
+        imagePullPolicy: Always
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+      imagePullSecrets:
+      - name: github-secret

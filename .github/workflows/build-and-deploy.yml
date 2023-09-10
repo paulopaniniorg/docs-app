@@ -1,0 +1,107 @@
+name: Maven Package
+
+on:
+  push:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up JDK 20
+      uses: actions/setup-java@v3
+      with:
+        java-version: '20'
+        distribution: 'temurin'
+        server-id: github # Value of the distributionManagement/repository/id field of the pom.xml
+        settings-path: ${{github.workspace}} # location for the settings.xml file
+
+    - name: Build with Maven
+      run: mvn -B package --file pom.xml
+      
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{secrets.GITHUB_TOKEN}}
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Setup date
+      id: date
+      run: echo "MY_DATE=$(date '+%Y%m%d%H%M%S')" >> $GITHUB_ENV
+
+    - name: Build and push
+      uses: docker/build-push-action@v4
+      with:
+        context: '.'
+        file: ./Dockerfile
+        push: true
+        platforms: linux/amd64,linux/arm64
+        tags: |
+          ghcr.io/${{github.repository_owner}}/docs-app:${{env.MY_DATE}}
+    outputs:
+       my_date: ${{env.MY_DATE}}
+
+
+  deploy-uat: 
+    if: "contains(github.event.head_commit.message, '#deployuat')"
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - uses: actions/checkout@v3
+    - run: |
+        git clone https://token:${{secrets.API_GITHUB_TOKEN}}@github.com/paulopanini/microservice-configurations.git
+        cd microservice-configurations/docs-app
+        git remote set-url origin https://token:${{secrets.API_GITHUB_TOKEN}}@github.com/paulopanini/microservice-configurations.git
+        git config --global user.email "backstage@benify.com"
+        git config --global user.name "backstage"
+        sed -i -E "s/(docs-app:)[a-z|0-9]*/docs-app:${{needs.build.outputs.my_date}}/g" deployment.yaml
+        git add .
+        git commit -m "Deploy ${{needs.build.outputs.my_date}}"
+        git push
+
+  first-deploy:
+    if: "contains(github.event.head_commit.message, '#backstage')"
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - run: mv flux-files/kustomization.yaml flux-files/docs-app-kustomization.yaml && cd flux-files && ls
+    - name: Copy files to flux-cd
+      uses: dmnemec/copy_file_to_another_repo_action@main
+      env:
+        API_TOKEN_GITHUB: ${{secrets.API_GITHUB_TOKEN}}
+      with:
+        source_file: flux-files/docs-app-kustomization.yaml
+        destination_repo: paulopaniniorg/flux-cd
+        destination_folder: clusters/my-cluster
+        user_email: backstage@backstage.com
+        user_name: backstage
+        commit_message: Adding docs-app to IAC
+    - run: sed -i -E "s/(docs-app:)[a-z|0-9]*/docs-app:${{needs.build.outputs.my_date}}/g" deployment/deployment.yaml
+    - name: Copy files to microservice-configurations
+      uses: cpina/github-action-push-to-another-repository@v1.7.2
+      env:
+        API_TOKEN_GITHUB: ${{secrets.API_GITHUB_TOKEN}}
+      with:
+        source-before-directory: deployment
+        source-directory: deployment
+        destination-github-username: paulopaniniorg
+        destination-repository-name: microservice-configurations
+        user-email: paulopanini@gmail.com
+        commit-message: Adding docs-app to IAC
+        target-directory: docs-app
+
