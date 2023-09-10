@@ -9,6 +9,6 @@ public class DemoController {
 
     @GetMapping(path = "/hello")
     public String sayHello() {
-        return "Hello World from docs-app";
+        return "Hello World from docs-app changing for demo";
     }
 }
