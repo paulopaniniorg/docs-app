@@ -64,6 +64,7 @@ jobs:
     - uses: actions/checkout@v3
     - run: |
         git clone https://token:${{secrets.API_GITHUB_TOKEN}}@github.com/paulopanini/microservice-configurations.git
+        ls
         cd microservice-configurations/docs-app
         git remote set-url origin https://token:${{secrets.API_GITHUB_TOKEN}}@github.com/paulopanini/microservice-configurations.git
         git config --global user.email "backstage@benify.com"
