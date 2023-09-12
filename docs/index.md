@@ -1,8 +1,13 @@
-# docs-app
+# Microservices
 
-Say hello
+This documentation explains how we're envisioning our microservices archtecture
 
-## Getting started
+![alt text](../Microservices.drawio.png)
 
-Start writing your documentation by adding more markdown (.md) files to this
-folder (/docs) or replace the content in this file.
+## Backstage
+
+Backstage is a tool that is used to host all things related to technical documentation and it also has some other cool features like being able to create a new repository based on a template.
+We're gonna create our repositories with that new feature.
+You can read more about what backstage can do here: [What is backstage?](https://backstage.io/docs/overview/what-is-backstage)
+
+### 
