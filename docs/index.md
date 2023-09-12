@@ -2,7 +2,21 @@
 
 This documentation explains how we're envisioning our microservices archtecture
 
-![alt text](../Microservices.drawio.png)
+![alt text](/docs/images/Microservices.jpg)
+
+
+## Tools  
+- Backstage
+   - TechDocs
+   - Software Catalog
+   - Software Templates
+- Git
+  - Github
+  - Github Actions
+  - Github Container Registry
+- Docker
+- FluxCD
+- Kubernetes
 
 ## Backstage
 
